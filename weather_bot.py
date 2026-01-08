@@ -1,51 +1,54 @@
 import requests
 import os
+import sys
 
-# 读取变量
-KEY = os.environ.get("WEATHER_KEY")
-CITY = os.environ.get("CITY_ID")
-WEBHOOK = os.environ.get("WECHAT_WEBHOOK")
+# 1. 直接打印环境变量是否存在（不打印具体值，只看有没有）
+def check_env():
+    vars_to_check = ["WEATHER_KEY", "CITY_ID", "WECHAT_WEBHOOK"]
+    print("--- 环境变量诊断 ---")
+    for var in vars_to_check:
+        value = os.environ.get(var)
+        if value:
+            print(f"✅ {var} 已读取，长度为: {len(value)}")
+        else:
+            print(f"❌ {var} 缺失！请检查 GitHub Secrets 中的名称")
+    print("-------------------\n")
 
 def get_weather():
-    # 注意：免费订阅版 API 地址是 devapi.qweather.com
+    KEY = os.environ.get("WEATHER_KEY")
+    CITY = os.environ.get("CITY_ID")
+    
+    if not KEY or not CITY:
+        return None
+
+    # 尝试请求
     url = f"https://devapi.qweather.com/v7/weather/now?location={CITY}&key={KEY}"
+    print(f"正在尝试请求接口...")
+    
     try:
-        response = requests.get(url)
+        # 增加 verify=False 排除 SSL 证书问题，增加 timeout 防止死等
+        response = requests.get(url, timeout=15)
+        print(f"HTTP 状态码: {response.status_code}")
+        
         res = response.json()
-        print(f"API Response Code: {res.get('code')}") # 这一行会在日志里显示返回码
+        print(f"和风天气返回内容: {res}")
         
         if res.get('code') == '200':
             now = res['now']
-            # 格式化一下显示效果
-            text = now['text']
-            temp = now['temp']
-            feelsLike = now['feelsLike']
-            return f"📍 城市：{CITY}\n☁️ 天气：{text}\n🌡️ 温度：{temp}°C (体感 {feelsLike}°C)\n💧 湿度：{now['humidity']}%"
+            return f"天气：{now['text']}\n温度：{now['temp']}°C"
         else:
-            print(f"获取天气失败，和风天气返回码：{res.get('code')}，请检查Key和城市ID")
+            print(f"和风接口报错，错误码：{res.get('code')}")
             return None
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"请求发生物理异常: {e}")
         return None
 
-def send_to_wechat(content):
-    if not WEBHOOK:
-        print("错误：未检测到 WECHAT_WEBHOOK 变量")
-        return
-    
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "msgtype": "text",
-        "text": {
-            "content": "【早安天气播报】\n" + content
-        }
-    }
-    r = requests.post(WEBHOOK, json=data, headers=headers)
-    print(f"微信推送结果: {r.status_code}, {r.text}")
-
 if __name__ == "__main__":
+    check_env()
     weather_info = get_weather()
+    
     if weather_info:
-        send_to_wechat(weather_info)
-    else:
-        print("没有获取到天气信息，不发送消息")
+        webhook = os.environ.get("WECHAT_WEBHOOK")
+        if webhook:
+            requests.post(webhook, json={"msgtype": "text", "text": {"content": weather_info}})
+            print("消息已尝试发送至微信")
