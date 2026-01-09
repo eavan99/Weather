@@ -3,7 +3,7 @@ name: Daily Weather Bot
 on:
   schedule:
     # 每天北京时间早上 8:40 运行 (UTC 0:00)
-    - cron: '0 0 * * *'
+    - cron: '40 0 * * *'
   workflow_dispatch: # 允许手动点击运行，方便测试
 
 jobs:
