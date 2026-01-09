@@ -30,7 +30,7 @@ def send_wechat_app(content):
     # 2. 发送应用消息给所有人
     send_url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}"
     data = {
-        "touser": "@all",  # 这里 @all 代表所有关注了插件的人都能收到
+        "touser": "QiuYuFang",  # 这里 @all 代表所有关注了插件的人都能收到
         "msgtype": "text",
         "agentid": agentid,
         "text": {
