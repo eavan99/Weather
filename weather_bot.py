@@ -22,21 +22,22 @@ def send_wechat_app(content):
     corpsecret = os.environ.get("CORP_SECRET")
     agentid = os.environ.get("AGENT_ID")
     
-    # 1. 获取 access_token
     token_url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={corpid}&corpsecret={corpsecret}"
     token_res = requests.get(token_url).json()
     token = token_res.get("access_token")
     
-    # 2. 发送应用消息给所有人
     send_url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}"
     data = {
-        "touser": "QiuYuFang",  # 这里 @all 代表所有关注了插件的人都能收到
+        "touser": "QiuYuFang",
         "msgtype": "text",
         "agentid": agentid,
-        "text": {
-            "content": content
-        },
+        "text": {"content": content},
         "safe": 0
     }
+    
     res = requests.post(send_url, json=data).json()
-    print(f"发送结果: {res}")
+    # 这一行非常重要，能告诉我们到底哪里出了问题
+    print(f"服务器返回结果: {res}")
+    
+    if res.get("invaliduser"):
+        print(f"⚠️ 警告：有成员未收到消息，可能是因为不在应用可见范围内或未关注插件。无效账号: {res.get('invaliduser')}")
