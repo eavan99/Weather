@@ -25,5 +25,6 @@ jobs:
         env:
           WEATHER_KEY: ${{ secrets.WEATHER_KEY }}
           CITY_ID: ${{ secrets.CITY_ID }}
-          WECHAT_WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
+          WXPUSHER_TOKEN: ${{ secrets.WXPUSHER_TOKEN }}  # 必须有这行
+          WXPUSHER_UIDS: ${{ secrets.WXPUSHER_UIDS }}    # 必须有这行
         run: python weather_bot.py
