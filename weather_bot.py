@@ -5,60 +5,57 @@ def get_weather():
     TOKEN = os.environ.get("WEATHER_KEY")
     LOCATION = os.environ.get("CITY_ID")
     
-    # 彩云 API 地址，增加 dailysteps=1 确保获取当天的天级预报
+    # 彩云 API 国际版域名，更稳定
     url = f"https://api.caiyunapp.com/v2.6/{TOKEN}/{LOCATION}/weather.json?dailysteps=1"
     
     try:
         res = requests.get(url, timeout=15).json()
         if res.get('status') == 'ok':
             result = res['result']
-            
-            # --- 1. 获取实时数据 ---
             realtime = result['realtime']
-            skycon = realtime['skycon']
-            sky_map = {"CLEAR_DAY": "☀️ 晴", "CLEAR_NIGHT": "🌙 晴", "PARTLY_CLOUDY_DAY": "⛅ 多云", 
-                       "CLOUDY": "☁️ 阴", "RAIN": "🌧️ 下雨", "SNOW": "❄️ 下雪", "WIND": "💨 大风", "HAZE": "🌫️ 雾霾"}
-            weather_text = sky_map.get(skycon, "🌡️ 观测中")
-
-            # --- 2. 获取当天预报 (最高/最低温) ---
             daily = result['daily']
-            max_temp = daily['temperature'][0]['max']
-            min_temp = daily['temperature'][0]['min']
+            
+            # 天气图标转换
+            sky_map = {"CLEAR_DAY": "☀️ 晴", "CLEAR_NIGHT": "🌙 晴", "PARTLY_CLOUDY_DAY": "⛅ 多云", "CLOUDY": "☁️ 阴", "RAIN": "🌧️ 下雨", "SNOW": "❄️ 下雪"}
+            weather_text = sky_map.get(realtime['skycon'], "🌡️ 观测中")
 
-            # --- 3. 获取穿衣指南 ---
-            # 彩云的生活指数在 daily.life_index 中
-            dressing = daily['life_index']['dressing'][0]['desc']
-
-            # --- 4. 组装消息 ---
+            # 组装文本内容
             report = (
                 f"今日天气：{weather_text}\n"
                 f"🌡️ 实时温度：{realtime['temperature']}°C\n"
-                f"📈 气温范围：{int(min_temp)}°C ~ {int(max_temp)}°C\n"
-                f"💧 相对湿度：{int(realtime['humidity'] * 100)}%\n"
-                f"👕 穿衣建议：{dressing}\n"
+                f"📈 气温范围：{int(daily['temperature'][0]['min'])}°C ~ {int(daily['temperature'][0]['max'])}°C\n"
+                f"👕 穿衣建议：{daily['life_index']['dressing'][0]['desc']}\n"
                 f"📝 贴心提醒：{result.get('forecast_keypoint', '祝你今天心情愉快！')}"
             )
             return report
-        else:
-            print(f"API 异常: {res.get('status')}")
-            return None
+        return None
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"获取天气失败: {e}")
         return None
 
-def send_to_wechat(content):
-    webhook = os.environ.get("WECHAT_WEBHOOK")
+def send_to_wxpusher(content):
+    app_token = os.environ.get("WXPUSHER_TOKEN")
+    uids = os.environ.get("WXPUSHER_UIDS").split(",") # 支持多个UID
+    
+    url = "https://wxpusher.zjiecode.com/api/send/message"
     data = {
-        "msgtype": "text",
-        "text": {
-            "content": "【彩云精准天气播报】\n" + content,
-            "mentioned_list": ["@all"] # 如果不需要艾特所有人，可以删掉这行
-        }
+        "appToken": app_token,
+        "content": content,
+        "contentType": 1, # 1表示文本
+        "uids": uids,
+        "summary": "今日天气提醒" # 微信卡片上显示的摘要
     }
-    requests.post(webhook, json=data)
+    
+    try:
+        res = requests.post(url, json=data).json()
+        if res.get('code') == 1000:
+            print("消息通过 WxPusher 发送成功！")
+        else:
+            print(f"WxPusher 发送失败: {res.get('msg')}")
+    except Exception as e:
+        print(f"推送异常: {e}")
 
 if __name__ == "__main__":
-    info = get_weather()
-    if info:
-        send_to_wechat(info)
-        print("发送成功！")
+    weather_info = get_weather()
+    if weather_info:
+        send_to_wxpusher(weather_info)
