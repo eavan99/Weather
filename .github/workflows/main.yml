@@ -2,9 +2,9 @@ name: Daily Weather Bot
 
 on:
   schedule:
-    # 每天北京时间早上 8:40 运行 (UTC 0:00)
+    # 北京时间 08:40 运行 (UTC 00:40)
     - cron: '40 0 * * *'
-  workflow_dispatch: # 允许手动点击运行，方便测试
+  workflow_dispatch: # 允许手动点击运行进行测试
 
 jobs:
   build:
@@ -19,12 +19,17 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install requests
+        run: |
+          pip install requests
 
       - name: Run bot
         env:
+          # 天气 API 变量
           WEATHER_KEY: ${{ secrets.WEATHER_KEY }}
           CITY_ID: ${{ secrets.CITY_ID }}
-          WXPUSHER_TOKEN: ${{ secrets.WXPUSHER_TOKEN }}  # 必须有这行
-          WXPUSHER_UIDS: ${{ secrets.WXPUSHER_UIDS }}    # 必须有这行
+          # 微信测试号 变量 (务必确保 GitHub Secrets 中已添加以下四个)
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          TEMPLATE_ID: ${{ secrets.TEMPLATE_ID }}
+          USER_IDS: ${{ secrets.USER_IDS }}
         run: python weather_bot.py
