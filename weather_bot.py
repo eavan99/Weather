@@ -17,28 +17,26 @@ def get_weather():
                     f"📝提醒：{res['result'].get('forecast_keypoint')}")
     except: return None
 
-def send_test_account():
-    app_id = os.environ.get("APP_ID")
-    app_secret = os.environ.get("APP_SECRET")
-    template_id = os.environ.get("TEMPLATE_ID")
-    user_ids = os.environ.get("USER_IDS").split(",")
-    weather_data = get_weather()
+def send_wechat_app(content):
+    corpid = os.environ.get("CORP_ID")
+    corpsecret = os.environ.get("CORP_SECRET")
+    agentid = os.environ.get("AGENT_ID")
     
-    if not weather_data: return
-
-    # 1. 获取微信 Token
-    token_url = f"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={app_id}&secret={app_secret}"
-    token = requests.get(token_url).json().get("access_token")
+    # 1. 获取 access_token
+    token_url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={corpid}&corpsecret={corpsecret}"
+    token_res = requests.get(token_url).json()
+    token = token_res.get("access_token")
     
-    # 2. 推送模板消息
-    send_url = f"https://api.weixin.qq.com/cgi-bin/message/template/send?access_token={token}"
-    for user_id in user_ids:
-        body = {
-            "touser": user_id.strip(),
-            "template_id": template_id,
-            "data": {"content": {"value": weather_data, "color": "#173177"}}
-        }
-        requests.post(send_url, json=body)
-
-if __name__ == "__main__":
-    send_test_account()
+    # 2. 发送应用消息给所有人
+    send_url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}"
+    data = {
+        "touser": "@all",  # 这里 @all 代表所有关注了插件的人都能收到
+        "msgtype": "text",
+        "agentid": agentid,
+        "text": {
+            "content": content
+        },
+        "safe": 0
+    }
+    res = requests.post(send_url, json=data).json()
+    print(f"发送结果: {res}")
