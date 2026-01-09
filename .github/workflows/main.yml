@@ -1,4 +1,4 @@
-name: Daily Weather Bot
+name: Daily Weather Bot (Self-Built App)
 
 on:
   schedule:
@@ -24,12 +24,11 @@ jobs:
 
       - name: Run bot
         env:
-          # 天气 API 变量
+          # 天气 API 参数
           WEATHER_KEY: ${{ secrets.WEATHER_KEY }}
           CITY_ID: ${{ secrets.CITY_ID }}
-          # 微信测试号 变量 (务必确保 GitHub Secrets 中已添加以下四个)
-          APP_ID: ${{ secrets.APP_ID }}
-          APP_SECRET: ${{ secrets.APP_SECRET }}
-          TEMPLATE_ID: ${{ secrets.TEMPLATE_ID }}
-          USER_IDS: ${{ secrets.USER_IDS }}
+          # 企业微信自建应用参数
+          CORP_ID: ${{ secrets.CORP_ID }}
+          CORP_SECRET: ${{ secrets.CORP_SECRET }}
+          AGENT_ID: ${{ secrets.AGENT_ID }}
         run: python weather_bot.py
