@@ -22,22 +22,33 @@ def send_wechat_app(content):
     corpsecret = os.environ.get("CORP_SECRET")
     agentid = os.environ.get("AGENT_ID")
     
+    # 1. 获取 token
     token_url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={corpid}&corpsecret={corpsecret}"
     token_res = requests.get(token_url).json()
     token = token_res.get("access_token")
     
+    # 2. 发送消息
     send_url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}"
     data = {
-        "touser": "QiuYuFang",
+        "touser": "@all",
         "msgtype": "text",
         "agentid": agentid,
         "text": {"content": content},
         "safe": 0
     }
     
-    res = requests.post(send_url, json=data).json()
-    # 这一行非常重要，能告诉我们到底哪里出了问题
-    print(f"服务器返回结果: {res}")
+    response = requests.post(send_url, json=data)
+    res = response.json()
     
-    if res.get("invaliduser"):
-        print(f"⚠️ 警告：有成员未收到消息，可能是因为不在应用可见范围内或未关注插件。无效账号: {res.get('invaliduser')}")
+    # 这一行是排查问题的关键！
+    print("--- 微信服务器返回结果 ---")
+    print(res)
+    print("-----------------------")
+
+if __name__ == "__main__":
+    weather_info = get_weather()
+    if weather_info:
+        print("天气获取成功，正在推送...")
+        send_wechat_app(weather_info)
+    else:
+        print("天气获取失败，请检查 WEATHER_KEY 和 CITY_ID")
